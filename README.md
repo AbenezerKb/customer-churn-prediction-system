@@ -1,1 +1,1 @@
-# Customer Prediction System
+# Customer Churn Prediction System
