@@ -2,11 +2,9 @@ name: unit-test
 on: 
   push:
     branches:
-      - '*' 
-    paths:
-      - '**/*.py'
+      - '*'     
   workflow_dispatch:
-      
+
 jobs:
     build: 
         runs-on: ubuntu-latest

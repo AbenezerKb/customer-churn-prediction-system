@@ -8,3 +8,4 @@ psycopg
 pytest
 structlog
 python-json-logger
+httpx
