@@ -39,7 +39,7 @@ jobs:
 
         - name: Start Docker Compose
           run: |
-            docker-compose  --env-file services/telecom_user/.env.example -f docker-compose.dev.yml up -d          
+            docker-compose  --env-file services/telecom_user/.env.example -f services/telecom_user/docker-compose.dev.yml up -d          
   
         - name: Wait for PostgreSQL
           run: |
