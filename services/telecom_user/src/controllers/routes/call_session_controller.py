@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from src.schemas.call_session import CallSession
-from src.models.call_sessions import CallSession as CallSessionModel
+from src.models.call_sessions import CallSession
+from src.schemas.call_sessions import CallSession as CallSessionModel
 from src.db.database import get_db
 from src.utils.response_wrapper import api_response
 
