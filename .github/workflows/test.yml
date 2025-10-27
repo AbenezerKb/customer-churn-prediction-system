@@ -1,7 +1,8 @@
 name: unit-test
 on: 
   push:
-
+    branches:
+      - '*' 
     paths:
       - '**/*.py'
 jobs:
