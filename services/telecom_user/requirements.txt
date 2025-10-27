@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+psycopg2-binary
+dotenv
+psycopg
+pytest
+structlog
+python-json-logger

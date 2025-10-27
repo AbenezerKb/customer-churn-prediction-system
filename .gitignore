@@ -1,0 +1,3 @@
+__pycache__/
+services/telecom_user/.env
+postgres_password.txt
