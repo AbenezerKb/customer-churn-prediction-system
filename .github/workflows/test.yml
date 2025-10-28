@@ -55,4 +55,11 @@ jobs:
         - name: Test with Pytest
           
           run: |
+            set -a
+            source services/telecom_user/.env.example
+            set +a
+            
+            echo "Loaded environment variables:"
+            env | grep POSTGRES_  
+                      
             pytest
