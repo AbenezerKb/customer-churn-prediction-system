@@ -43,7 +43,7 @@ jobs:
   
         - name: Wait for PostgreSQL
           run: |
-            until docker-compose exec -T postgres pg_isready; do
+            until docker-compose -f services/telecom_user/docker-compose.dev.yml --env-file services/telecom_user/.env.example exec -T postgres pg_isready; do
               echo "Waiting for PostgreSQL..."
               sleep 2
             done
