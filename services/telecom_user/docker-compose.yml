@@ -1,0 +1,37 @@
+services:
+  telecom_app:
+    build: .
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    networks:
+      - conn   
+    secrets:
+      - database_secrets
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  postgres:
+    image: postgres:15
+    environment:
+       POSTGRES_USER: postgres
+       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+       POSTGRES_DB: telecom_db
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - conn
+
+secrets:
+  postgres_password:
+    file: ./postgres_password.txt
+  database_secrets:
+    file: ./.env
+
+volumes:
+  postgres_data:
+
+networks:
+  conn:
