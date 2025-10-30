@@ -1,0 +1,107 @@
+services:
+  postgres_db:
+    image: postgres:15
+    environment:
+       POSTGRES_USER_FILE: /run/secrets/postgres_user
+       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+       POSTGRES_DB_FILE: /run/secrets/postgres_db
+ 
+    secrets:
+      - postgres_user
+      - postgres_password
+      - postgres_db
+    ports:
+      - 5432:5432
+    networks:
+      - conn
+
+  postgres_raw:
+    image: postgres:15
+    environment:
+       POSTGRES_USER_FILE: /run/secrets/postgres_user
+       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+       POSTGRES_DB_FILE: /run/secrets/postgres_db
+       POSTGRES_PORT: 5433
+ 
+    secrets:
+      - postgres_user
+      - postgres_password
+      - postgres_db
+
+    command: ["postgres", "-p", "5433"]
+    ports:
+      - 5433:5433
+    networks:
+      - conn
+
+  mongodb:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongo_user
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_password
+      MONGO_INITDB_DATABASE_FILE: /run/secrets/mongo_db
+      
+ 
+    secrets:
+      - mongo_user
+      - mongo_password
+      - mongo_db
+    ports:
+      - 27017:27017
+    networks:
+      - conn
+
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres_db
+      - postgres_raw
+      - mongodb
+    volumes:
+      - ./logs:/app/airflow/logs
+    environment:
+      R_POSTGRES_PORT: 5432  
+      R_POSTGRES_HOST: postgres_db
+      
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__DATABASE__EXTERNAL_DB_MANAGERS: airflow.providers.fab.auth_manager.models.db.FABDBManager
+      AIRFLOW__CORE__LOAD_EXAMPLES: False
+
+      MONGO_PORT: 27017  
+      MONGO_HOST: mongodb
+    ports:
+      - 8080:8080
+    secrets:
+      - postgres_user
+      - postgres_password
+      - postgres_db
+      - mongo_user
+      - mongo_password
+      - mongo_db
+    networks:
+      - conn
+
+
+  
+
+
+secrets:
+  postgres_user:
+    file: ./secrets/postgres_user.txt
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  postgres_db:
+    file: ./secrets/postgres_db.txt
+  mongo_user:
+    file: ./secrets/mongo_user.txt
+  mongo_password: 
+    file: ./secrets/mongo_password.txt
+  mongo_db:
+    file: ./secrets/mongo_db.txt
+networks:
+      conn:
+volumes:
+  logs:
