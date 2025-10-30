@@ -3,8 +3,12 @@ on:
   push:
     branches:
       - '*'     
-  workflow_dispatch:
 
+    paths:
+      - services/telecom_user/*
+
+  workflow_dispatch:
+   
 jobs:
     build: 
         runs-on: ubuntu-latest
