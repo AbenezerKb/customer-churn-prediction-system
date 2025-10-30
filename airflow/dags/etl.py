@@ -208,4 +208,43 @@ def etl_process(**kwargs):
     
     conn.close()
     
+    df = df.fillna(value=0)
     
+    records = df.to_dict(orient='records')
+
+
+    mongo_host = os.getenv("MONGO_HOST")   
+    mongo_port = os.getenv("MONGO_PORT")       
+    mongo_conn=""
+    db = ""
+   
+   
+    if Path("/run/secrets/mongo_password").exists():        
+        db = Path("/run/secrets/mongo_db").read_text().strip()              
+        mongo_conn = f"mongodb://{Path('/run/secrets/mongo_user').read_text().strip()}:{Path('/run/secrets/mongo_password').read_text().strip()}@{mongo_host}:{mongo_port}/{db}?authSource=admin"
+    else:               
+        db =os.getenv("MONGO_INITDB_DATABASE")
+        mongo_conn = f"mongodb://{os.getenv('MONGO_INITDB_ROOT_USERNAME')}:{os.getenv('MONGO_INITDB_ROOT_PASSWORD')}@{mongo_host}:{mongo_port}/{db}?authSource=admin"
+
+    client = MongoClient(mongo_conn)
+    try:
+        client.admin.command('ping')
+        print("MongoDB connection successful!")
+    except Exception as e:
+        print(f"MongoDB connection failed: {e}")
+    collection = client[db]['training_records'] 
+    if records:
+        collection.insert_many(records)
+        print(f"Inserted {len(records)} documents into MongoDB.")
+    else:
+        print("No data to insert.")
+
+
+
+etl_task = PythonOperator(
+    task_id='etl_from_postgres_to_mongo',
+    python_callable=etl_process,
+    dag=dag,
+)
+
+etl_task
