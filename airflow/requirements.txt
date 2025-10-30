@@ -1,0 +1,13 @@
+apache-airflow[standard]
+apache-airflow-providers-standard
+psycopg2
+asyncpg
+graphviz
+psycopg2-binary
+apache-airflow-providers-fab
+apache-airflow-providers-postgres
+apache-airflow-providers-mongo
+pandas
+dotenv
+pymongo
+pendulum
