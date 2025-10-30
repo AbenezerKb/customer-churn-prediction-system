@@ -11,3 +11,4 @@ pandas
 dotenv
 pymongo
 pendulum
+pytest<7.0
