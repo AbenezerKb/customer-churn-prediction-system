@@ -16,6 +16,14 @@ load_dotenv()
 
 DAG_FOLDER = Path(__file__).resolve().parent
 CONFIG_FILE = DAG_FOLDER / "config" / "config.yml"
+
+
+if not os.path.exists(CONFIG_FILE):
+    print("file not found")
+    PROJECT_ROOT = Path(__file__).resolve().parents[1]
+    CONFIG_FILE = PROJECT_ROOT / "config" / "config.yml"
+
+
 with open(CONFIG_FILE, "r") as f:
     cfg = yaml.safe_load(f)
 
