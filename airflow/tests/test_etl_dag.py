@@ -21,6 +21,7 @@ sys.modules['airflow.providers.mongo'] = MagicMock()
 sys.modules['airflow.providers.mongo.hooks'] = MagicMock()
 sys.modules['airflow.providers.mongo.hooks.mongo'] = MagicMock()
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 
