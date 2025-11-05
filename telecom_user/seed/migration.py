@@ -13,11 +13,16 @@ def migrate_tables():
     
     try:
         conn = psycopg2.connect(
-            dbname=os.getenv('POSTGRES_DB'),
-            user=os.getenv('POSTGRES_USER'),
-            password=os.getenv('POSTGRES_PASSWORD'),
-            host=os.getenv('POSTGRES_HOST'),
-            port=os.getenv('POSTGRES_PORT')
+            # dbname=os.getenv('POSTGRES_DB'),
+            # user=os.getenv('POSTGRES_USER'),
+            # password=os.getenv('POSTGRES_PASSWORD'),
+            # host=os.getenv('POSTGRES_HOST'),
+            # port=os.getenv('POSTGRES_PORT')
+            dbname="telecom_db",
+user="postgres",
+password="7184e605-4a5a-4b23-be7d-50918e9a245a",
+host="postgres",
+port="5432"
         )
         cur = conn.cursor()
         print(f"Successfully connected to PostgreSQL at {os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}")

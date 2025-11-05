@@ -1,0 +1,90 @@
+services:
+  postgres_db:
+    image: postgres:15    
+    ports:
+      - 5432:5432
+    environment:      
+      POSTGRES_USER: ${A_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${A_POSTGRES_PASSWORD}
+      POSTGRES_DB:  ${A_POSTGRES_DB}
+      POSTGRES_PORT: ${A_POSTGRES_PORT}  
+      POSTGRES_HOST: ${A_POSTGRES_HOST}
+    networks:
+      - conn
+
+  postgres_raw:
+    image: postgres:15   
+    command: ["postgres", "-p", "5433"]
+    ports:
+      - 5433:5433
+    environment:      
+      POSTGRES_USER: ${R_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${R_POSTGRES_PASSWORD}
+      POSTGRES_DB:  ${R_POSTGRES_DB}
+      POSTGRES_PORT: ${R_POSTGRES_PORT}  
+      POSTGRES_HOST: ${R_POSTGRES_HOST}
+    networks:
+      - conn
+
+  mongodb:
+    image: mongo:latest             
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    networks:
+      - conn
+
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres_db
+      - postgres_raw
+      - mongodb
+    volumes:
+      - ./logs:/app/airflow/logs
+    environment:
+      
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__DATABASE__EXTERNAL_DB_MANAGERS: airflow.providers.fab.auth_manager.models.db.FABDBManager
+      AIRFLOW__CORE__LOAD_EXAMPLES: False
+      AIRFLOW_USERNAME: ${AIRFLOW_USERNAME}
+      AIRFLOW_FIRSTNAME: ${AIRFLOW_FIRSTNAME}
+      AIRFLOW_LASTNAME: ${AIRFLOW_LASTNAME}
+      AIRFLOW_ROLE: ${AIRFLOW_ROLE}
+      AIRFLOW_EMAIL: ${AIRFLOW_EMAIL}
+      AIRFLOW_PASSWORD: ${AIRFLOW_PASSWORD}
+      
+      A_POSTGRES_USER: ${A_POSTGRES_USER}
+      A_POSTGRES_PASSWORD: ${A_POSTGRES_PASSWORD}
+      A_POSTGRES_DB:  ${A_POSTGRES_DB}
+      A_POSTGRES_PORT: ${A_POSTGRES_PORT}  
+      A_POSTGRES_HOST: ${A_POSTGRES_HOST}
+
+      R_POSTGRES_USER: ${R_POSTGRES_USER}
+      R_POSTGRES_PASSWORD: ${R_POSTGRES_PASSWORD}
+      R_POSTGRES_DB:  ${R_POSTGRES_DB}
+      R_POSTGRES_PORT: ${R_POSTGRES_PORT}  
+      R_POSTGRES_HOST: ${R_POSTGRES_HOST}
+
+
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_PORT: ${MONGO_PORT}  
+      MONGO_HOST: ${MONGO_HOST}
+
+    ports:
+      - 8080:8080
+    
+    networks:
+      - conn
+
+
+networks:
+      conn: 

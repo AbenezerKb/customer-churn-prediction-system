@@ -1,0 +1,12 @@
+dag_id: a812eb51-10df-4d3f-afb8-efcd982cb03c
+owner: ammi_students
+depends_on_past: false
+start_date: "2025-01-01"
+timezone: UTC
+schedule : "*/1 * * * *"
+catchup: false
+description: 'ETL from Postgres tables to MongoDB with flat structure'
+email_on_failure: false
+email_on_retry: false
+retries: 1
+retry_delay: 3
