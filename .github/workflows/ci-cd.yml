@@ -1,9 +1,7 @@
 name: CI/CD – build & deploy
 
 on:
-  push:
-    branches:
-      - ci/cd-test
+  workflow_dispatch:
 
 permissions:
   contents: read
