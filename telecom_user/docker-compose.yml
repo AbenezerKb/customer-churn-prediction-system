@@ -1,12 +1,12 @@
 services:
   telecom_app:
-    build: .
+    image: ejahdilan/telapi-app:v8
     depends_on:
       - postgres
     ports:
       - "8000:8000"
     networks:
-      - conn   
+      - conn
     secrets:
       - database_secrets
     command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
