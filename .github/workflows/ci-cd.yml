@@ -12,7 +12,7 @@ permissions:
 env:
   IMAGE_NAME: mianjatiana/telapi-app
   COMPOSE_FILE: ./telecom_user/docker-compose.yml 
-  REMOTE_DEPLOY_DIR: /home/churnsvc/tel-app-deploy
+  REMOTE_DEPLOY_DIR: /home/ejahuser/tel-app-deploy
   LATEST_TAG: v8
 
 jobs:
