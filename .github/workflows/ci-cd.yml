@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 env:
-  IMAGE_NAME: ejahdilan/telapi-app
+  IMAGE_NAME: mianjatiana/telapi-app
   COMPOSE_FILE: ./telecom_user/docker-compose.yml 
   REMOTE_DEPLOY_DIR: /home/churnsvc/tel-app-deploy
   LATEST_TAG: v8
