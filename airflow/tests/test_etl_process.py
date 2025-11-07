@@ -17,9 +17,9 @@ sys.modules['airflow.providers.standard.operators.python'] = MagicMock()
 sys.modules['airflow.providers.postgres'] = MagicMock()
 sys.modules['airflow.providers.postgres.hooks'] = MagicMock()
 sys.modules['airflow.providers.postgres.hooks.postgres'] = MagicMock()
-sys.modules['airflow.providers.mongo'] = MagicMock()
-sys.modules['airflow.providers.mongo.hooks'] = MagicMock()
-sys.modules['airflow.providers.mongo.hooks.mongo'] = MagicMock()
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 
 class TestDAGStructure:
 
@@ -43,7 +43,7 @@ class TestDAGStructure:
             "retries": 1,
             "retry_delay": 5,
             "dag_id": "telecom_etl_dag",
-            "description": "ETL from Postgres to MongoDB",
+            "description": "ETL from Postgres to Azure Blob",
             "schedule": "@daily",
             "catchup": False
         }
@@ -66,7 +66,7 @@ class TestDAGStructure:
                         kwargs.get("dag_id") == "telecom_etl_dag"
                         and kwargs["default_args"]["owner"] == "data_team"
                         and kwargs.get("schedule") == "@daily"
-                        and kwargs.get("description") == "ETL from Postgres to MongoDB"
+                        and kwargs.get("description") == "ETL from Postgres to Azure Blob"
                     ):
                         found = True
                         break
