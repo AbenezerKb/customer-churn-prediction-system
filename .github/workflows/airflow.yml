@@ -5,14 +5,13 @@ on:
     branches:
       - '*'     
 
-    paths:
-      - airflow/*
+   
+     
   pull_request:
     branches:
       - '*'     
         
-    paths:
-      - airflow/*  
+   
   workflow_dispatch:
 
 jobs:
@@ -25,10 +24,7 @@ jobs:
           POSTGRES_DB: testdb
           POSTGRES_USER: user
           POSTGRES_PASSWORD: pass
-        ports: [5432:5432]
-      mongo:
-        image: mongo
-        ports: [27017:27017]
+        ports: [5432:5432]     
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -36,4 +32,4 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -r airflow/requirements.txt 'pytest==6.2.5'
-      - run: pytest airflow/tests/ -v
+      - run: PYTHONPATH=. pytest airflow/tests/ -v

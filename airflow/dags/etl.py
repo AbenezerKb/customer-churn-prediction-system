@@ -1,28 +1,31 @@
 import os
-from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from airflow.providers.mongo.hooks.mongo import MongoHook
+from airflow.models import Variable
+
 import pandas as pd
 from pathlib import Path
-from pymongo import MongoClient
 import yaml
+import time
+import logging
+from azure.storage.blob import BlobServiceClient
+from io import BytesIO
 import pendulum
 from dotenv import load_dotenv
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 DAG_FOLDER = Path(__file__).resolve().parent
 CONFIG_FILE = DAG_FOLDER / "config" / "config.yml"
 
-
 if not os.path.exists(CONFIG_FILE):
-    print("file not found")
+    logging.info("file not found")
     PROJECT_ROOT = Path(__file__).resolve().parents[1]
     CONFIG_FILE = PROJECT_ROOT / "config" / "config.yml"
-
 
 with open(CONFIG_FILE, "r") as f:
     cfg = yaml.safe_load(f)
@@ -34,18 +37,21 @@ def parse_start_date(date_str: str, tz: str) -> pendulum.DateTime:
     return dt
 
 DATABASE_URL = ""
-secret_path = Path("/run/secrets/postgres_password")
-if secret_path.exists():
+secret_path = Path("/run/secrets/r_postgres_password")
+if secret_path.exists():  
+    secret_path = secret_path.read_text().strip()    
+    postgres_user = Path('/run/secrets/r_postgres_user').read_text().strip()
+    postgres_db = Path('/run/secrets/r_postgres_db').read_text().strip()
     DATABASE_URL = (
     f"postgresql+psycopg://"
-    f"{Path('/run/secrets/postgres_user').read_text().strip()}:"
-    f"{secret_path.read_text().strip()}@"
+    f"{postgres_user}:"
+    f"{secret_path}@"
     f"{os.getenv('R_POSTGRES_HOST')}:"
     f"{os.getenv('R_POSTGRES_PORT')}/"
-    f"{Path('/run/secrets/postgres_db').read_text().strip()}"
+    f"{Path('/run/secrets/r_postgres_db').read_text().strip()}"
 )
-else:
-        
+    postgres_conn_id=f"postgresql+psycopg2://{postgres_user}:{secret_path}@{os.getenv('R_POSTGRES_HOST')}:{os.getenv('R_POSTGRES_PORT')}/{postgres_db}"
+else:   
     DATABASE_URL = (
     f"postgresql+psycopg://"
     f"{os.getenv('R_POSTGRES_USER')}:"
@@ -54,6 +60,7 @@ else:
     f"{os.getenv('R_POSTGRES_PORT')}/"
     f"{os.getenv('R_POSTGRES_DB')}"
 )    
+    postgres_conn_id=f"postgresql+psycopg2://{os.getenv('R_POSTGRES_USER')}:{os.getenv('R_POSTGRES_PASSWORD')}@{os.getenv('R_POSTGRES_HOST')}:{os.getenv('R_POSTGRES_PORT')}/{os.getenv('R_POSTGRES_DB')}"
 
 default_args = {
     'owner': cfg["owner"],
@@ -73,13 +80,12 @@ dag = DAG(
     catchup=cfg["catchup"],
 )
 
-postgres_conn_id=f"postgresql+psycopg2://{os.getenv('R_POSTGRES_USER')}:{os.getenv('R_POSTGRES_PASSWORD')}@{os.getenv('R_POSTGRES_HOST')}:{os.getenv('R_POSTGRES_PORT')}/{os.getenv('R_POSTGRES_DB')}"
 def etl_process(**kwargs):
     pg_hook = PostgresHook(postgres_conn_id="postgres_telecom_db") 
     conn = pg_hook.get_conn()
         
-    
-    query = """
+    last_loaded_at = Variable.get("last_loaded_at", default_var="1970-01-01T00:00:00")
+    query = f"""
     WITH latest_billing AS (
         SELECT 
             customer_id,
@@ -91,7 +97,8 @@ def etl_process(**kwargs):
             SELECT customer_id, MAX(period_date)
             FROM billing
             GROUP BY customer_id
-        )
+        ) AND updated_at > '{last_loaded_at}'
+        ORDER BY updated_at
     ),
     latest_usage AS (
         SELECT 
@@ -99,13 +106,16 @@ def etl_process(**kwargs):
             monthly_minutes AS "MonthlyMinutes",
             overage_minutes AS "OverageMinutes",
             roaming_calls AS "RoamingCalls",
-            perc_change_minutes AS "PercChangeMinutes"
+            perc_change_minutes AS "PercChangeMinutes",
+            updated_at
         FROM usage_minutes
         WHERE (customer_id, period_date) IN (
             SELECT customer_id, MAX(period_date)
             FROM usage_minutes
             GROUP BY customer_id
         )
+         AND updated_at > '{last_loaded_at}'
+        ORDER BY updated_at
     ),
     latest_calls AS (
         SELECT 
@@ -130,6 +140,8 @@ def etl_process(**kwargs):
             FROM call_details
             GROUP BY customer_id
         )
+         AND updated_at > '{last_loaded_at}'
+        ORDER BY updated_at
     ),
     latest_device AS (
         SELECT 
@@ -146,6 +158,8 @@ def etl_process(**kwargs):
             FROM device
             GROUP BY customer_id
         ) ld ON d.customer_id = ld.customer_id AND d.activation_date = ld.max_activation
+         AND d.updated_at > '{last_loaded_at}'
+        ORDER BY d.updated_at
     )
     SELECT 
         lb."MonthlyRevenue",
@@ -169,6 +183,7 @@ def etl_process(**kwargs):
         lc."DroppedBlockedCalls",
         lc."CallForwardingCalls",
         lc."CallWaitingCalls",
+        lu."updated_at",
         c.months_in_service AS "MonthsInService",
         c.unique_subs AS "UniqueSubs",
         c.active_subs AS "ActiveSubs",
@@ -216,41 +231,43 @@ def etl_process(**kwargs):
     
     conn.close()
     
-    df = df.fillna(value=0)
-    
-    records = df.to_dict(orient='records')
+    if not df.empty:
+        df = df.fillna(value=0)
+        account_name = os.getenv("AZURE_STORAGE_ACCOUNT_NAME")
+        account_key = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
+        azure_connection_string = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key};EndpointSuffix=core.windows.net"
+        azure_container = os.getenv("AZURE_CONTAINER_NAME")
 
+        timestamp = int(time.time())
+        blob_name = f"training_records_{timestamp}.csv"
 
-    mongo_host = os.getenv("MONGO_HOST")   
-    mongo_port = os.getenv("MONGO_PORT")       
-    mongo_conn=""
-    db = ""
-   
-   
-    if Path("/run/secrets/mongo_password").exists():        
-        db = Path("/run/secrets/mongo_db").read_text().strip()              
-        mongo_conn = f"mongodb://{Path('/run/secrets/mongo_user').read_text().strip()}:{Path('/run/secrets/mongo_password').read_text().strip()}@{mongo_host}:{mongo_port}/{db}?authSource=admin"
-    else:               
-        db =os.getenv("MONGO_INITDB_DATABASE")
-        mongo_conn = f"mongodb://{os.getenv('MONGO_INITDB_ROOT_USERNAME')}:{os.getenv('MONGO_INITDB_ROOT_PASSWORD')}@{mongo_host}:{mongo_port}/{db}?authSource=admin"
+        if Path("/run/secrets/azure_connection_string").exists():
+            azure_connection_string = Path("/run/secrets/azure_connection_string").read_text().strip()
+            azure_container = Path("/run/secrets/azure_container_name").read_text().strip() if Path("/run/secrets/azure_container_name").exists() else azure_container       
+        blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
+        container_client = blob_service_client.get_container_client(azure_container)
 
-    client = MongoClient(mongo_conn)
-    try:
-        client.admin.command('ping')
-        print("MongoDB connection successful!")
-    except Exception as e:
-        print(f"MongoDB connection failed: {e}")
-    collection = client[db]['training_records'] 
-    if records:
-        collection.insert_many(records)
-        print(f"Inserted {len(records)} documents into MongoDB.")
+        df["updated_at"] = pd.to_datetime(df["updated_at"], errors="coerce")
+
+        new_last = df["updated_at"].max().isoformat()
+        Variable.set("last_loaded_at", new_last)
+        df = df.drop("updated_at",  axis=1)
+        csv_buffer = BytesIO()
+        df.to_csv(csv_buffer, index=False)
+        csv_buffer.seek(0)
+
+        blob_client = container_client.get_blob_client(blob_name)
+        try:
+            blob_client.upload_blob(csv_buffer, overwrite=True)
+            logging.info(f"Uploaded {blob_name} to Azure Blob Storage container {azure_container}.")
+        except Exception as e:
+            logging.error(f"Azure Blob upload failed: {e}")   
     else:
-        print("No data to insert.")
-
+        logging.info("No data to insert") 
 
 
 etl_task = PythonOperator(
-    task_id='etl_from_postgres_to_mongo',
+    task_id='etl_from_postgres_to_azure_blob',
     python_callable=etl_process,
     dag=dag,
 )
