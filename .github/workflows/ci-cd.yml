@@ -11,7 +11,7 @@ permissions:
 
 env:
   IMAGE_NAME: ejahdilan/telapi-app
-  COMPOSE_FILE: /telecom_user/docker-compose.yml 
+  COMPOSE_FILE: ./telecom_user/docker-compose.yml 
   REMOTE_DEPLOY_DIR: /home/churnsvc/tel-app-deploy
   LATEST_TAG: v8
 
@@ -66,7 +66,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: . 
-          file: /telecom_user/Dockerfile 
+          file: ./telecom_user/Dockerfile 
           push: true
           tags: |
             ${{ steps.set-tags.outputs.image_sha }}
@@ -101,7 +101,7 @@ jobs:
           username: ${{ secrets.AZURE_SSH_USER }}
           port: ${{ secrets.AZURE_SSH_PORT || 22 }}
           key: ${{ secrets.AZURE_SSH_PRIVATE_KEY }}
-          source: "/telecom_user/docker-compose.yml"
+          source: "./telecom_user/docker-compose.yml"
           target: ${{ env.REMOTE_DEPLOY_DIR }}
           strip_components: 0
 
