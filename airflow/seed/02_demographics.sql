@@ -1,0 +1,23 @@
+CREATE TABLE demographics (
+    id SERIAL PRIMARY KEY,
+    customer_id INTEGER NOT NULL REFERENCES customer(id) ON DELETE CASCADE,
+    age_hh1 INTEGER,
+    age_hh2 INTEGER,
+    children_in_hh INTEGER,
+    truck_owner BOOLEAN,
+    rv_owner BOOLEAN,
+    homeownership VARCHAR(20),
+    buys_via_mail_order BOOLEAN,
+    responds_to_mail_offers BOOLEAN,
+    opt_out_mailings BOOLEAN,
+    non_us_travel BOOLEAN,
+    owns_computer BOOLEAN,
+    has_credit_card BOOLEAN,
+    income_group INTEGER,
+    owns_motorcycle BOOLEAN,
+    prizm_code VARCHAR(50),
+    occupation VARCHAR(50),
+    marital_status VARCHAR(20),
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now()
+);
