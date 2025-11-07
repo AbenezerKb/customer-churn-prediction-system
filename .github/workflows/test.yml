@@ -4,7 +4,8 @@ on:
     branches:
       - '*'     
 
-    
+    paths:
+      - telecom_user/*
      
 
   workflow_dispatch:
