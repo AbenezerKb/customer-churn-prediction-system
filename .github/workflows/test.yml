@@ -4,8 +4,8 @@ on:
     branches:
       - '*'     
 
-    paths:
-      - telecom_user/*
+    
+     
 
   workflow_dispatch:
    
@@ -25,12 +25,12 @@ jobs:
             python -m pip install --upgrade pip
         - name: Check for requirements.txt
           run: |
-            if [ ! -f telecom_user/requirements.txt ]; then
+            if [ ! -f ./telecom_user/requirements.txt ]; then
               echo "requirements.txt not found!"
               exit 1
             fi 
         - name: Install dependencies
-          run: pip install -r telecom_user/requirements.txt
+          run: pip install -r ./telecom_user/requirements.txt azure-storage-blob
         
         - name: Set up Docker Buildx
           uses: docker/setup-buildx-action@v3
@@ -43,24 +43,24 @@ jobs:
 
         - name: Start Docker Compose
           run: |
-            docker-compose  --env-file telecom_user/.env.example -f telecom_user/docker-compose.dev.yml up -d          
+            docker-compose  --env-file ./telecom_user/.env.example -f ./telecom_user/docker-compose.dev.yml up -d          
   
         - name: Wait for PostgreSQL
           run: |
-            until docker-compose -f telecom_user/docker-compose.dev.yml --env-file telecom_user/.env.example exec -T postgres pg_isready; do
+            until docker-compose -f ./telecom_user/docker-compose.dev.yml --env-file ./telecom_user/.env.example exec -T postgres pg_isready; do
               echo "Waiting for PostgreSQL..."
               sleep 2
             done
   
         - name: Seed
           run: |
-            python telecom_user/seed/migration.py
+            python ./telecom_user/seed/migration.py
 
         - name: Test with Pytest
           
           run: |
             set -a
-            source telecom_user/.env.example
+            source ./telecom_user/.env.example
             set +a
             
             echo "Loaded environment variables:"
