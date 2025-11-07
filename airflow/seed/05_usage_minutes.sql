@@ -10,9 +10,3 @@ CREATE TABLE usage_minutes (
     updated_at TIMESTAMP DEFAULT now(),
     FOREIGN KEY (customer_id) REFERENCES customer(id) ON DELETE CASCADE
 );
-
-
-INSERT INTO usage_minutes (customer_id, period_date, monthly_minutes, overage_minutes, roaming_calls, perc_change_minutes)
-VALUES
-(1, '2023-10-01', 500, 50, 10, 10.00),
-(2, '2023-10-01', 800, 100, 20, -5.00);

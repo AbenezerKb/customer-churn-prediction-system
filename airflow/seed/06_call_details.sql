@@ -21,10 +21,3 @@ CREATE TABLE call_details (
     PRIMARY KEY (id),
     FOREIGN KEY (customer_id) REFERENCES customer(id) ON DELETE CASCADE
 );
-
-
-
-INSERT INTO call_details (customer_id, period_date, dropped_calls, blocked_calls, unanswered_calls, customer_care_calls, three_way_calls, received_calls, outbound_calls, inbound_calls, peak_calls_in_out, off_peak_calls_in_out, dropped_blocked_calls, call_forwarding_calls, call_waiting_calls, director_assisted_calls)
-VALUES
-(1, '2023-10-01', 5, 3, 10, 2, 1, 100, 150, 120, 200, 150, 8, 0, 5, 2),
-(2, '2023-10-01', 10, 5, 15, 3, 2, 200, 250, 220, 300, 250, 15, 1, 10, 3);
