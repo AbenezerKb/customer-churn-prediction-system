@@ -1,0 +1,125 @@
+services:
+  postgres_db:
+    image: postgres:15
+    environment:
+       POSTGRES_USER_FILE: /run/secrets/a_postgres_user
+       POSTGRES_PASSWORD_FILE: /run/secrets/a_postgres_password
+       POSTGRES_DB_FILE: /run/secrets/a_postgres_db
+       
+ 
+    secrets:
+      - a_postgres_user
+      - a_postgres_password
+      - a_postgres_db
+    ports:
+      - 5432:5432
+    networks:
+      - conn
+
+  postgres_raw:
+    image: postgres:15
+    environment:
+       POSTGRES_USER_FILE: /run/secrets/r_postgres_user
+       POSTGRES_PASSWORD_FILE: /run/secrets/r_postgres_password
+       POSTGRES_DB_FILE: /run/secrets/r_postgres_db
+       POSTGRES_PORT: 5433
+       R_POSTGRES_PORT: 5433        
+ 
+    secrets:
+      - r_postgres_user
+      - r_postgres_password
+      - r_postgres_db
+
+    command: ["postgres", "-p", "5433"]
+    ports:
+      - 5433:5433
+    networks:
+      - conn
+
+
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres_db
+      - postgres_raw     
+    volumes:
+      - ./logs:/app/airflow/logs
+    environment:
+      A_POSTGRES_PORT: 5432  
+      A_POSTGRES_HOST: postgres_db
+      R_POSTGRES_PORT: 5433
+      R_POSTGRES_HOST: postgres_raw
+      
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+      AIRFLOW__DATABASE__EXTERNAL_DB_MANAGERS: airflow.providers.fab.auth_manager.models.db.FABDBManager
+      AIRFLOW__CORE__LOAD_EXAMPLES: False
+    
+    ports:
+      - 8080:8080
+    secrets:
+      - a_postgres_user
+      - a_postgres_password
+      - a_postgres_db
+      - r_postgres_user
+      - r_postgres_password
+      - r_postgres_db
+      - azure_connection_string
+      - azure_storage_account_name
+      - azure_container_name
+      - azure_storage_account_key
+      - airflow_role
+      - airflow_email
+      - airflow_username
+      - airflow_firstname
+      - airflow_lastname
+      - airflow_password
+
+
+    networks:
+      - conn
+
+
+  
+
+
+secrets:
+  a_postgres_user:
+    file: ./secrets/a_postgres_user.txt
+  a_postgres_password:
+    file: ./secrets/a_postgres_password.txt
+  a_postgres_db:
+    file: ./secrets/a_postgres_db.txt
+  r_postgres_user:
+    file: ./secrets/r_postgres_user.txt
+  r_postgres_password:
+    file: ./secrets/r_postgres_password.txt
+  r_postgres_db:
+    file: ./secrets/r_postgres_db.txt
+  azure_connection_string:
+    file: ./secrets/azure_storage_connection_string.txt
+  azure_storage_account_name:
+    file: ./secrets/azure_storage_account_name.txt
+  azure_container_name:
+    file: ./secrets/azure_storage_container_name.txt
+  azure_storage_account_key:
+    file: ./secrets/azure_storage_account_key.txt 
+  airflow_role:
+    file: ./secrets/airflow_role.txt 
+  airflow_username:
+    file: ./secrets/airflow_username.txt 
+  airflow_firstname:
+    file: ./secrets/airflow_firstname.txt 
+  airflow_lastname:
+    file: ./secrets/airflow_lastname.txt 
+  airflow_email:
+    file: ./secrets/airflow_email.txt 
+  airflow_password:
+    file: ./secrets/airflow_password.txt 
+
+networks:
+      conn:
+volumes:
+  logs:
