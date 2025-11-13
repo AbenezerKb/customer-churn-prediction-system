@@ -7,25 +7,19 @@ load_dotenv()
 
 SQL_DIR = "seed"
 
-POSTGRES_DB= ""
-POSTGRES_USER= ""
-POSTGRES_PASSWORD= ""
-POSTGRES_HOST= ""
-POSTGRES_PORT= ""
-password = Path("/run/secrets/postgres_password")
+POSTGRES_DB=os.getenv('R_POSTGRES_DB')
+POSTGRES_USER=os.getenv('R_POSTGRES_USER')
+POSTGRES_PASSWORD=os.getenv('R_POSTGRES_PASSWORD')
+POSTGRES_HOST=os.getenv('R_POSTGRES_HOST')
+POSTGRES_PORT=os.getenv('R_POSTGRES_PORT')
+password = Path("/run/secrets/r_postgres_password")
 if password.exists():
-    POSTGRES_DB= Path('/run/secrets/postgres_db').read_text().strip()
-    POSTGRES_USER= Path('/run/secrets/postgres_user').read_text().strip()
-    POSTGRES_PASSWORD= Path("/run/secrets/postgres_password").read_text().strip() 
+    POSTGRES_DB= Path('/run/secrets/r_postgres_db').read_text().strip()
+    POSTGRES_USER= Path('/run/secrets/r_postgres_user').read_text().strip()
+    POSTGRES_PASSWORD= Path("/run/secrets/r_postgres_password").read_text().strip() 
     POSTGRES_HOST= os.getenv('R_POSTGRES_HOST')
     POSTGRES_PORT= os.getenv('R_POSTGRES_PORT')
 
-else:        
-    POSTGRES_DB=os.getenv('R_POSTGRES_DB')
-    POSTGRES_USER=os.getenv('R_POSTGRES_USER')
-    POSTGRES_PASSWORD=os.getenv('R_POSTGRES_PASSWORD')
-    POSTGRES_HOST=os.getenv('R_POSTGRES_HOST')
-    POSTGRES_PORT=os.getenv('R_POSTGRES_PORT')
 
 def migrate_tables():
     conn = None 
@@ -65,7 +59,7 @@ def migrate_tables():
                 sql_content = f.read()
             
             cur.execute(sql_content)
-            print(f"--- Executed {file_name} successfully.")
+            print(f"Executed {file_name} successfully.")
         
         conn.commit()
         print("Migration completed successfully.")

@@ -26,17 +26,6 @@ services:
     networks:
       - conn
 
-  mongodb:
-    image: mongo:latest             
-    ports:
-      - 27017:27017
-    environment:
-      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-    networks:
-      - conn
-
   airflow:
     build:
       context: .
@@ -44,7 +33,6 @@ services:
     depends_on:
       - postgres_db
       - postgres_raw
-      - mongodb
     volumes:
       - ./logs:/app/airflow/logs
     environment:
@@ -72,15 +60,13 @@ services:
       R_POSTGRES_PORT: ${R_POSTGRES_PORT}  
       R_POSTGRES_HOST: ${R_POSTGRES_HOST}
 
-
-      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-      MONGO_PORT: ${MONGO_PORT}  
-      MONGO_HOST: ${MONGO_HOST}
+      AZURE_STORAGE_ACCOUNT_NAME: ${AZURE_STORAGE_ACCOUNT_NAME}
+      AZURE_STORAGE_ACCOUNT_KEY: ${AZURE_STORAGE_ACCOUNT_KEY}
+      AZURE_CONTAINER_NAME: ${AZURE_CONTAINER_NAME}
 
     ports:
       - 8080:8080
+    
     
     networks:
       - conn
